@@ -17,11 +17,11 @@ object SparkBuild extends Build {
   //val HADOOP_VERSION = "2.0.0-mr1-cdh4.1.1"
   //val HADOOP_MAJOR_VERSION = "2"
 
-  lazy val root = Project("root", file("."), settings = rootSettings) aggregate(core, repl, examples, bagel)
+  lazy val root = Project("root", file("."), settings = rootSettings) aggregate(core, /*repl,*/ examples, bagel)
 
   lazy val core = Project("core", file("core"), settings = coreSettings)
 
-  lazy val repl = Project("repl", file("repl"), settings = replSettings) dependsOn (core)
+//  lazy val repl = Project("repl", file("repl"), settings = replSettings) dependsOn (core)
 
   lazy val examples = Project("examples", file("examples"), settings = examplesSettings) dependsOn (core)
 
@@ -34,7 +34,7 @@ object SparkBuild extends Build {
   def sharedSettings = Defaults.defaultSettings ++ Seq(
     organization := "org.spark-project",
     version := "0.7.0-SNAPSHOT",
-    scalaVersion := "2.9.2",
+    scalaVersion := "2.10.0-RC5", // 2.10.0 (final) and 2.10.0-RC5 are byte-code identical, but at the moment more packages are published for "RC5".
     scalacOptions := Seq(/*"-deprecation",*/ "-unchecked", "-optimize"), // -deprecation is too noisy due to usage of old Hadoop API, enable it once that's no longer an issue
     unmanagedJars in Compile <<= baseDirectory map { base => (base / "lib" ** "*.jar").classpath },
     retrieveManaged := true,
@@ -87,9 +87,10 @@ object SparkBuild extends Build {
 
     libraryDependencies ++= Seq(
       "org.eclipse.jetty" % "jetty-server" % "7.5.3.v20111011",
-      "org.scalatest" %% "scalatest" % "1.8" % "test",
-      "org.scalacheck" %% "scalacheck" % "1.9" % "test",
-      "com.novocode" % "junit-interface" % "0.8" % "test"
+      "org.scalatest" % "scalatest_2.10.0" % "2.0.M5" % "test",
+      "org.scalacheck" %% "scalacheck" % "1.10.0" % "test",
+      "com.novocode" % "junit-interface" % "0.8" % "test",
+      "org.scala-lang" % "scala-actors" % "2.10.0"
     ),
     parallelExecution := false,
     /* Workaround for issue #206 (fixed after SBT 0.11.0) */
@@ -105,20 +106,20 @@ object SparkBuild extends Build {
     publishLocalBoth <<= Seq(publishLocal in MavenCompile, publishLocal).dependOn
   )
 
-  val slf4jVersion = "1.6.1"
+  val slf4jVersion = "1.7.2"
 
   def coreSettings = sharedSettings ++ Seq(
     name := "spark-core",
     resolvers ++= Seq(
       "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
       "JBoss Repository" at "http://repository.jboss.org/nexus/content/repositories/releases/",
-      "Spray Repository" at "http://repo.spray.cc/",
+      "Spray Repository" at "http://repo.spray.io/",
       "Cloudera Repository" at "https://repository.cloudera.com/artifactory/cloudera-repos/"
     ),
 
     libraryDependencies ++= Seq(
       "com.google.guava" % "guava" % "11.0.1",
-      "log4j" % "log4j" % "1.2.16",
+      "log4j" % "log4j" % "1.2.17",
       "org.slf4j" % "slf4j-api" % slf4jVersion,
       "org.slf4j" % "slf4j-log4j12" % slf4jVersion,
       "com.ning" % "compress-lzf" % "0.8.4",
@@ -131,8 +132,9 @@ object SparkBuild extends Build {
       "com.typesafe.akka" % "akka-slf4j" % "2.0.3",
       "it.unimi.dsi" % "fastutil" % "6.4.4",
       "colt" % "colt" % "1.2.0",
-      "cc.spray" % "spray-can" % "1.0-M2.1",
-      "cc.spray" % "spray-server" % "1.0-M2.1",
+      "io.spray" % "spray-can" % "1.1-M7",
+      "io.spray" % "spray-routing" % "1.1-M7",
+//      "io.spray" % "spray-server" % "1.1-M7",
       "org.apache.mesos" % "mesos" % "0.9.0-incubating"
     ) ++ (if (HADOOP_MAJOR_VERSION == "2") Some("org.apache.hadoop" % "hadoop-client" % HADOOP_VERSION) else None).toSeq,
     unmanagedSourceDirectories in Compile <+= baseDirectory{ _ / ("src/hadoop" + HADOOP_MAJOR_VERSION + "/scala") }

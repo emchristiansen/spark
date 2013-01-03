@@ -5,11 +5,15 @@ import com.typesafe.config.ConfigFactory
 import akka.util.duration._
 import akka.pattern.ask
 import akka.remote.RemoteActorRefProvider
-import cc.spray.Route
-import cc.spray.io.IoWorker
-import cc.spray.{SprayCanRootService, HttpService}
-import cc.spray.can.server.HttpServer
-import cc.spray.io.pipelines.MessageHandlerDispatch.SingletonHandler
+import spray.can.server._
+import spray.can._
+import spray.routing._
+import spray.io._
+//import cc.spray.Route
+//import cc.spray.io.IoWorker
+//import cc.spray.{SprayCanRootService, HttpService}
+//import cc.spray.can.server.HttpServer
+//import cc.spray.io.pipelines.MessageHandlerDispatch.SingletonHandler
 import akka.dispatch.Await
 import spark.SparkException
 import java.util.concurrent.TimeoutException
@@ -54,11 +58,11 @@ private[spark] object AkkaUtils {
    * handle requests. Throws a SparkException if this fails.
    */
   def startSprayServer(actorSystem: ActorSystem, ip: String, port: Int, route: Route) {
-    val ioWorker = new IoWorker(actorSystem).start()
-    val httpService = actorSystem.actorOf(Props(new HttpService(route)))
+    val ioWorker = IOExtension(actorSystem).ioBridge()
+    val httpService = actorSystem.actorOf(Props(new HttpService(route, cc.spray.RejectionHandler.Default)))
     val rootService = actorSystem.actorOf(Props(new SprayCanRootService(httpService)))
     val server = actorSystem.actorOf(
-      Props(new HttpServer(ioWorker, SingletonHandler(rootService))), name = "HttpServer")
+      Props(new HttpServer(ioWorker, SingletonHandler(rootService), cc.spray.can.ServerConfig.fromAkkaConf)), name = "HttpServer")
     actorSystem.registerOnTermination { ioWorker.stop() }
     val timeout = 3.seconds
     val future = server.ask(HttpServer.Bind(ip, port))(timeout)

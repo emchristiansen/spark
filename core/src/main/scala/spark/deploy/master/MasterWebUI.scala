@@ -5,9 +5,7 @@ import akka.dispatch.Await
 import akka.pattern.ask
 import akka.util.Timeout
 import akka.util.duration._
-import cc.spray.Directives
-import cc.spray.directives._
-import cc.spray.typeconversion.TwirlSupport._
+import spray.routing._
 import spark.deploy._
 
 private[spark]
